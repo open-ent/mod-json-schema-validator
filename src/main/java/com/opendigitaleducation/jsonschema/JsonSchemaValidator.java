@@ -52,19 +52,22 @@ public class JsonSchemaValidator extends BusModBase implements Handler<Message<J
 	@Override
 	public void handle(Message<JsonObject> message) {
 		String action = message.body().getString("action", "");
-		switch (action) {
-			case "validate" :
-				validate(message);
-				break;
-			case "getSchemaKeys" :
-				getSchemaKeys(message);
-				break;
-			case "addSchema" :
-				addSchema(message);
-				break;
-			default :
-				sendError(message, "invalid.action");
-		}
+		vertx.executeBlocking(() -> {
+			switch (action) {
+				case "validate" :
+					validate(message);
+					break;
+				case "getSchemaKeys" :
+					getSchemaKeys(message);
+					break;
+				case "addSchema" :
+					addSchema(message);
+					break;
+				default :
+					sendError(message, "invalid.action");
+			}
+			return null;
+		});
 	}
 
 	private void validate(Message<JsonObject> message) {
