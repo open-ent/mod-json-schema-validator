@@ -22,6 +22,7 @@ import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
@@ -42,11 +43,19 @@ public class JsonSchemaValidator extends BusModBase implements Handler<Message<J
 	private JsonSchemaFactory schemaFactory;
 
 	@Override
-	public void start() {
-		super.start();
-		this.schemas = new HashMap<>();
-		this.schemaFactory = JsonSchemaFactory.byDefault();
-		vertx.eventBus().consumer(config.getString("address", "json.schema.validator"), this);
+	public void start(final Promise<Void> startPromise) {
+    final Promise<Void> p = Promise.promise();
+    try {
+      super.start(p);
+      p.future().onSuccess(e -> {
+        this.schemas = new HashMap<>();
+        this.schemaFactory = JsonSchemaFactory.byDefault();
+        vertx.eventBus().localConsumer(config.getString("address", "json.schema.validator"), this);
+        startPromise.complete();
+      }).onFailure(startPromise::fail);
+    } catch (Exception e) {
+      startPromise.fail(e);
+    }
 	}
 
 	@Override
@@ -78,6 +87,7 @@ public class JsonSchemaValidator extends BusModBase implements Handler<Message<J
 		}
 		final JsonSchema schema = schemas.get(key);
 		if (schema == null) {
+      logger.warn("The schema " + key + " does not exist");
 			sendError(message, "invalid.schema.key");
 			return;
 		}
@@ -125,7 +135,8 @@ public class JsonSchemaValidator extends BusModBase implements Handler<Message<J
 				schemas.put(key, schemaFactory.getJsonSchema(jsonNode));
 				sendOK(message);
 			}
-		} catch (Exception e) {
+		} catch (Throwable e) {
+      logger.error("An error occurred while registering schema " + key, e);
 			sendError(message, "schema.error", e);
 		}
 	}
