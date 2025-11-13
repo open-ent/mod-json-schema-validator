@@ -15,7 +15,7 @@
 
   <properties>
     <web-utils.version>3.2-SNAPSHOT</web-utils.version>
-    <jsonSchemaValidatorVersion>2.2.0</jsonSchemaValidatorVersion>
+    <jsonSchemaValidatorVersion>2.2.14</jsonSchemaValidatorVersion>
   </properties>
 
   <scm>
