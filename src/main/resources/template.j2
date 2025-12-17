@@ -1,0 +1,10 @@
+{
+   "name": "com.opendigitaleducation~mod-json-schema-validator",
+   "waitDeploy" : true,
+   "worker": true,
+   "multi-threaded": true,
+   "config": {
+      "address" : "json.schema.validator",
+      "instances": {{ jsonValidatorInstances|default(50)}}
+   }
+}
