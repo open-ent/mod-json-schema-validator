@@ -14,7 +14,7 @@
   <version>2.1-separation-SNAPSHOT</version>
 
   <properties>
-    <web-utils.version>3.3-SNAPSHOT</web-utils.version>
+    <web-utils.version>3.3-separation-SNAPSHOT</web-utils.version>
     <jsonSchemaValidatorVersion>2.2.14</jsonSchemaValidatorVersion>
       <shade.minimizeJar>false</shade.minimizeJar>
   </properties>
