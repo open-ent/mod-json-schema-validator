@@ -15,8 +15,9 @@
 
   <properties>
     <web-utils.version>3.3.1</web-utils.version>
-    <jsonSchemaValidatorVersion>2.2.14</jsonSchemaValidatorVersion>
-      <shade.minimizeJar>false</shade.minimizeJar>
+    <shade.minimizeJar>false</shade.minimizeJar>
+    <jsonSchemaValidatorVersion>1.0.87</jsonSchemaValidatorVersion>
+    <junitVersion>4.13.2</junitVersion>
   </properties>
 
   <scm>
@@ -46,15 +47,27 @@
       <version>${web-utils.version}</version>
       <scope>compile</scope>
     </dependency>
-
-
-
-      <dependency>
-          <groupId>com.github.java-json-tools</groupId>
-          <artifactId>json-schema-validator</artifactId>
-          <version>${jsonSchemaValidatorVersion}</version>
-      </dependency>
-
-
+    <dependency>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+      <version>${jsonSchemaValidatorVersion}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junitVersion}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.3.1</version>
+      </plugin>
+    </plugins>
+  </build>
 </project>
