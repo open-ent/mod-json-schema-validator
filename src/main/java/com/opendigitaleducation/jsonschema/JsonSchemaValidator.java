@@ -17,10 +17,11 @@
 package com.opendigitaleducation.jsonschema;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.github.fge.jackson.JsonLoader;
-import com.github.fge.jsonschema.core.report.ProcessingReport;
-import com.github.fge.jsonschema.main.JsonSchema;
-import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
@@ -32,6 +33,7 @@ import org.vertx.java.busmods.BusModBase;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static fr.wseduc.webutils.Utils.getOrElse;
 import static fr.wseduc.webutils.Utils.isEmpty;
@@ -41,21 +43,14 @@ public class JsonSchemaValidator extends BusModBase implements Handler<Message<J
 
 	private Map<String, JsonSchema> schemas;
 	private JsonSchemaFactory schemaFactory;
+	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
 	@Override
-	public void start(final Promise<Void> startPromise) {
-    final Promise<Void> p = Promise.promise();
-    try {
-      super.start(p);
-      p.future().onSuccess(e -> {
-        this.schemas = new HashMap<>();
-        this.schemaFactory = JsonSchemaFactory.byDefault();
-        vertx.eventBus().localConsumer(config.getString("address", "json.schema.validator"), this);
-        startPromise.complete();
-      }).onFailure(startPromise::fail);
-    } catch (Exception e) {
-      startPromise.fail(e);
-    }
+	public void start() {
+		super.start();
+		this.schemas = new HashMap<>();
+		this.schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+		vertx.eventBus().consumer(config.getString("address", "json.schema.validator"), this);
 	}
 
 	@Override
@@ -97,11 +92,11 @@ public class JsonSchemaValidator extends BusModBase implements Handler<Message<J
 			return;
 		}
 		try {
-			final ProcessingReport report = schema.validate(JsonLoader.fromString(Json.encode(json)));
-			if (report.isSuccess()) {
+			final Set<ValidationMessage> errors = schema.validate(OBJECT_MAPPER.readTree(Json.encode(json)));
+			if (errors.isEmpty()) {
 				sendOK(message);
 			} else {
-				sendError(message, report.toString());
+				sendError(message, errors.toString());
 			}
 		} catch (Exception e) {
 			sendError(message, "validation.error", e);
@@ -128,15 +123,11 @@ public class JsonSchemaValidator extends BusModBase implements Handler<Message<J
 			return;
 		}
 		try {
-			final JsonNode jsonNode = JsonLoader.fromString(schema.encode());
-			if (!schemaFactory.getSyntaxValidator().schemaIsValid(jsonNode)) {
-				sendError(message, "invalid.schema.syntax");
-			} else {
-				schemas.put(key, schemaFactory.getJsonSchema(jsonNode));
-				sendOK(message);
-			}
-		} catch (Throwable e) {
-      logger.error("An error occurred while registering schema " + key, e);
+			final JsonNode jsonNode = OBJECT_MAPPER.readTree(schema.encode());
+			final JsonSchema jsonSchema = schemaFactory.getSchema(jsonNode);
+			schemas.put(key, jsonSchema);
+			sendOK(message);
+		} catch (Exception e) {
 			sendError(message, "schema.error", e);
 		}
 	}
